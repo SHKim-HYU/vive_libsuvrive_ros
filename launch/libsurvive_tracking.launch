@@ -1,0 +1,14 @@
+<launch>
+  <!-- Steam-free VIVE tracking via libsurvive.
+       Usage:  roslaunch vive_libsurvive_ros libsurvive_tracking.launch
+       Override the config:  ... config:=/abs/path/to/trackers.yaml -->
+
+  <arg name="config" default="$(find vive_libsurvive_ros)/config/trackers.yaml"/>
+  <arg name="node_name" default="vive_libsurvive_ros"/>
+  <arg name="output" default="screen"/>
+
+  <node pkg="vive_libsurvive_ros" type="survive_tracking_node.py"
+        name="$(arg node_name)" output="$(arg output)">
+    <rosparam command="load" file="$(arg config)"/>
+  </node>
+</launch>

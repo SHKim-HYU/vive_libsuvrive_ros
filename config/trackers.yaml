@@ -1,0 +1,42 @@
+# Device map for the libsurvive (Steam-free) tracking node.
+#
+# IMPORTANT: with the simple pysurvive API each device is identified by its
+# libsurvive CODENAME (e.g. T20, KN0, WM0, LH0), NOT by its LHR-/LHB- serial.
+# libsurvive assigns these codenames deterministically per physical device and
+# remembers them in ~/.config/libsurvive/config.json, so they stay stable.
+#
+# Codenames observed on this machine (survive-cli):  T20, KN0, WM0  (3 trackers)
+#
+# To learn which codename is which physical tracker: launch the node, then move
+# ONE tracker and watch which ~<name>/pose topic changes. Then set its name here.
+#
+# Setup: 3 trackers (2 via dongle, 1 via direct USB) + 2x SteamVR 2.0 base stations.
+
+world_frame: libsurvive_world
+publish_tf: true
+publish_twist: true          # ignored on this build: simple API exposes no velocity
+publish_lighthouses: true
+publish_rate: 120.0
+
+# Force gen2 lighthouses and keep a persistent calibration/codename file.
+survive_args:
+  - "--lighthouse-gen"
+  - "2"
+  - "-c"
+  - "/home/robot/.config/libsurvive/config.json"
+
+devices:
+  # --- trackers (match on survive_name = libsurvive codename) --------------
+  # Rename the friendly 'name' values once you have identified each codename.
+  - survive_name: T20
+    name: tracker_1           # serial hint (optional): LHR-CBB722E9 / BE06DF83 / 18744CF1
+  - survive_name: KN0
+    name: tracker_2
+  - survive_name: WM0
+    name: tracker_3
+
+  # --- base stations 2.0 (libsurvive codenames look like LH0 / LH1) -------
+  - survive_name: LH0
+    name: lighthouse_0
+  - survive_name: LH1
+    name: lighthouse_1

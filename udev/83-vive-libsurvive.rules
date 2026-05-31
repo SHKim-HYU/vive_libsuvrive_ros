@@ -1,0 +1,31 @@
+## udev rules for accessing HTC VIVE / Valve devices from libsurvive without root.
+## Install:  sudo cp 83-vive-libsurvive.rules /etc/udev/rules.d/ \
+##           && sudo udevadm control --reload-rules && sudo udevadm trigger
+## Then replug the dongles / USB tracker (or reboot).
+##
+## libsurvive talks to the devices over hidraw + libusb, so both subsystems need
+## the "uaccess" tag for the logged-in user.
+## Base list from https://github.com/ValveSoftware/SteamVR-for-Linux
+
+# --- HID interfaces (hidraw) ----------------------------------------------
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0bb4", ATTRS{idProduct}=="2c87", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2101", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2000", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="1043", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2050", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2011", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2012", TAG+="uaccess"
+
+# --- USB nodes (libusb) ---------------------------------------------------
+# Vive wireless receiver / dongle and HMD hub
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bb4", ATTRS{idProduct}=="2c87", TAG+="uaccess"
+# Valve dongle (watchman receiver) used by trackers/controllers
+SUBSYSTEM=="usb", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2101", TAG+="uaccess"
+# VIVE Tracker connected DIRECTLY over USB (the "serial-connected" tracker)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2300", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bb4", ATTRS{idProduct}=="2c00", TAG+="uaccess"
+
+# --- HTC camera / mass storage nodes --------------------------------------
+SUBSYSTEM=="usb", ATTRS{idVendor}=="114d", ATTRS{idProduct}=="8328", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="114d", ATTRS{idProduct}=="8200", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="114d", ATTRS{idProduct}=="8a12", TAG+="uaccess"

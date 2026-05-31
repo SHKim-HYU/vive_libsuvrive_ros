@@ -1,0 +1,115 @@
+# Drop-in compatibility with the SteamVR-based vive_tracking_ros package.
+#
+# Matches its device names, topics and frames so downstream code keeps working:
+#   * names matched by SERIAL (same LHR-/LHB- serials as vive_config.yaml)
+#   * topics:   /vive/<name>/pose   (PoseStamped, frame_id = vive_world)
+#               /vive/<name>/twist  (TwistStamped, frame_id = <name>)
+#   * TF:       vive_world -> <name>
+#   * '-' in names replaced by '_'
+#
+# COORDINATE TRANSFORM (reproduces vive_tracking_ros's mapping):
+#   final_pos  = R(world_rotation) * libsurvive_pos
+#   final_quat = world_rotation * libsurvive_quat * tracker_local_rotation
+#
+# vive_tracking_ros's own constants (computed from its source) are:
+#   world rotation        = +90 deg about X  ([0.70710678,0,0,0.70710678])
+#                           -> turns OpenVR's Y-up frame into Z-up.
+#   tracker local rotation= [-0.70710454, 0.70710902, 0, 0]
+# libsurvive is ALREADY Z-up, so we do NOT repeat the +90 X here (that would
+# double-rotate). We keep world_rotation at identity and apply only the tracker
+# body rotation, then align heading/origin via the yaw below.
+#
+# Note: the absolute world ORIGIN and YAW are defined independently by each
+# backend's calibration, so set the yaw (3rd number of world_rotation) to line
+# up heading with your SteamVR vive_world, and accept an origin offset (or add a
+# static TF). Compare both in RViz to tune.
+
+# Backend publishes in its own frame, NOT vive_world (the hyumm anchor package
+# owns vive_world). Topic names stay /vive/<name>/... for drop-in consumption.
+world_frame: libsurvive_world
+topic_namespace: "/vive"
+dash_to_underscore: true
+publish_tf: true
+publish_twist: true          # no-op on this build (simple API exposes no velocity)
+publish_lighthouses: true
+# Upper cap on publish loop. libsurvive's true pose rate is IMU-driven (often
+# ~240-1000 Hz for Vive trackers); set this >= that to publish every update.
+# (Raised from 120 to expose the real ceiling; lower it later if CPU matters.)
+publish_rate: 1000.0
+
+# World rotation: [roll,pitch,yaw] (rad) OR a 4-elem [x,y,z,w] quaternion.
+# Default identity (libsurvive already Z-up). Put a yaw here to match heading,
+# or set to [0.70710678,0,0,0.70710678] to apply the full OpenVR-style +90 X.
+world_rotation: [0.0, 0.0, 0.0]
+# Tracker body rotation (post-multiplied), matching vive_tracking_ros. Set [] to disable.
+apply_tracker_local: true
+tracker_local_rotation: [-0.70710454, 0.70710902, 0.0, 0.0]
+
+# Optional low-pass filtering of published tracker pose/twist (trackers only).
+# 0 = OFF (libsurvive output is already Kalman-smoothed -- start here). A value
+# in (0,1) is the EMA factor for position/twist and the SLERP fraction for
+# orientation: smaller = smoother but more lag (e.g. 0.2 = noticeable smoothing,
+# 0.5 = light). Enable only if you see residual jitter downstream.
+pose_filter_alpha: 0.0
+twist_filter_alpha: 0.0
+
+# NOTE: vive_world ANCHORING is intentionally NOT done here. This package is the
+# backend/driver; the fixed-tracker -> vive_world anchor lives in the hyumm
+# application package. The coordinate transform (world_rotation, tracker_local)
+# and body twist above are kept and applied here as before.
+
+# libsurvive args. Two-phase use for the 2-base occlusion-free setup:
+#  PHASE 1 (calibration, solver ON): after setting the two base stations to
+#    DIFFERENT channels, `rm ~/.config/libsurvive/config.json` and run AS BELOW
+#    (globalscenesolver enabled by default). Hold a tracker visible to BOTH bases
+#    ~10 s, then sweep it through the overlap until config.json gains BOTH a
+#    'lighthouse0' and 'lighthouse1' block (each PositionSet:1).
+#  PHASE 2 (production, geometry frozen): once calibration is good, add
+#    '--globalscenesolver','0' to stop the solver rewriting/drifting the geometry.
+#    If a SteamVR lighthousedb.json from vive_tracking_ros exists, also add
+#    '--steamvr-calibration','<path>' for SteamVR-grade base accuracy.
+# Rate: the Vive Tracker IMU runs at 250 Hz (hardware). libsurvive hardcodes
+#    imu_freq=250 -> default min-report-time = 1/250 = 4 ms = 250 Hz cap, which
+#    matches the real IMU rate. VERIFIED: raising the cap to 500 Hz
+#    ('--min-report-time','0.002') left BOTH trackers at ~250 Hz, so 250 Hz is the
+#    true hardware ceiling -- you cannot get more from these trackers. (An earlier
+#    one-off 125 Hz reading on one tracker was a transient tracking dropout, not a
+#    real per-unit rate.) Leave it at the default; only set '--min-report-time'
+#    '0.008' if you deliberately want all trackers throttled to a uniform 125 Hz.
+# IMU dead-reckoning through TOTAL occlusion (optional): libsurvive's EKF already
+#   integrates IMU between light sweeps. By default it applies a Zero-Velocity
+#   Update 0.1 s after light loss (freezes) then drops poses once variance exceeds
+#   report-ignore-threshold (goes silent). To COAST on pure IMU through brief total
+#   blackouts (at the cost of drift), add:
+#     '--kalman-zvu-no-light-time','0.5'   (delay the zero-velocity assumption)
+#     '--kalman-zvu-no-light','-1'         (disable the no-light ZVU entirely)
+#     '--report-ignore-threshold','1'      (keep reporting through higher variance)
+#   Validate in RViz -- the coasted pose drifts the longer a tracker sees no base.
+survive_args:
+  - "--lighthouse-gen"
+  - "2"
+  - "-c"
+  - "/home/robot/.config/libsurvive/config.json"
+  - "--min-report-time"
+  - "0.001"
+
+# Names from vive_tracking_ros/config/vive_config.yaml.
+# Matching priority: survive_name (libsurvive codename) first, then serial.
+# survive_name values were verified PHYSICALLY on 2026-05-30 by moving each
+# tracker, so the mapping is locked regardless of what serial libsurvive reports.
+devices:
+  - serial: LHB-C2B156E3          # base #1 (OOTX id c2b156e3)
+    name: lighthouse_b
+  - serial: LHB-E98D4AF6          # base #2 (OOTX id e98d4af6, seen 2026-05-31)
+    name: lighthouse_c
+  - serial: LHR-7C3753B7          # controller (not connected right now)
+    name: right_controller
+  - survive_name: T20             # verified -> rear
+    serial: LHR-CBB722E9
+    name: tracker_mobile_rear
+  - survive_name: KN0             # verified -> front
+    serial: LHR-BE06DF83
+    name: tracker_mobile_front
+  - survive_name: WM0             # verified -> fixed
+    serial: LHR-18744CF1
+    name: tracker_fixed

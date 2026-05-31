@@ -1,0 +1,13 @@
+<launch>
+  <!-- libsurvive tracking that mimics vive_tracking_ros's topics/frames/names.
+       roslaunch vive_libsurvive_ros vive_compat.launch -->
+
+  <arg name="config" default="$(find vive_libsurvive_ros)/config/vive_compat.yaml"/>
+  <arg name="node_name" default="vive_libsurvive_ros"/>
+  <arg name="output" default="screen"/>
+
+  <node pkg="vive_libsurvive_ros" type="survive_tracking_node.py"
+        name="$(arg node_name)" output="$(arg output)">
+    <rosparam command="load" file="$(arg config)"/>
+  </node>
+</launch>
