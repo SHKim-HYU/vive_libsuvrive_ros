@@ -92,6 +92,11 @@ survive_args:
   - "/home/robot/.config/libsurvive/config.json"
   - "--min-report-time"
   - "0.001"
+  # FROZEN geometry (calibrated 2026: variance LH0=0.00032 LH1=0.00073). Solver
+  # no longer rewrites config.json -> no runtime drift. To RECALIBRATE: remove
+  # these 2 lines, rm ~/.config/libsurvive/config.json, sweep, then re-add.
+  - "--globalscenesolver"
+  - "0"
 
 # Names from vive_tracking_ros/config/vive_config.yaml.
 # Matching priority: survive_name (libsurvive codename) first, then serial.
