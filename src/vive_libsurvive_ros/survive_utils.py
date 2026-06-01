@@ -10,7 +10,7 @@ from geometry_msgs.msg import PoseStamped, TransformStamped, TwistStamped
 
 def rpy_to_quat(rpy):
     """(roll, pitch, yaw) radians -> (x, y, z, w). Identity for [0,0,0]."""
-    from tf.transformations import quaternion_from_euler
+    from .transforms import quaternion_from_euler
     r, p, y = (float(rpy[0]), float(rpy[1]), float(rpy[2]))
     return tuple(quaternion_from_euler(r, p, y))
 
@@ -25,7 +25,7 @@ def quat_from_param(value):
     if len(seq) == 4:
         q = [float(v) for v in seq]
     elif len(seq) == 3:
-        from tf.transformations import quaternion_from_euler
+        from .transforms import quaternion_from_euler
         q = list(quaternion_from_euler(*[float(v) for v in seq]))
     else:
         raise ValueError("rotation must be 4 (quat) or 3 (rpy) numbers, got %r"
@@ -55,7 +55,7 @@ def transform_pose(position, quat, q_world, q_local):
               constant. Position is unaffected. Pass None to skip.
     """
     import numpy as np
-    from tf.transformations import quaternion_matrix, quaternion_multiply
+    from .transforms import quaternion_matrix, quaternion_multiply
 
     if _is_identity(q_world):
         pos = tuple(float(c) for c in position)
@@ -201,7 +201,7 @@ def body_twist(linear, angular, q_world, position, quat):
     """
     import numpy as np
     import modern_robotics as mr
-    from tf.transformations import quaternion_matrix
+    from .transforms import quaternion_matrix
 
     lin = np.asarray(linear, dtype=float)
     ang = np.asarray(angular, dtype=float)
@@ -243,7 +243,7 @@ class _QuatSlerp(object):
 
     def update(self, q):
         import numpy as np
-        from tf.transformations import quaternion_slerp
+        from .transforms import quaternion_slerp
         q = np.asarray(q, dtype=float)
         if self.last is None or self.fraction >= 1.0:
             self.last = q

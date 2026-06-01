@@ -1,28 +1,34 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>vive_libsurvive_ros</name>
   <version>0.1.0</version>
   <description>
-    Steam-free HTC VIVE Tracker / Lighthouse tracking for ROS1 (Noetic) using libsurvive.
-    Publishes PoseStamped + TF (and optionally TwistStamped) for multiple trackers and
-    base stations without SteamVR / OpenVR. Designed for 3 trackers (2 via dongle, 1 via
-    direct USB) and 2x SteamVR 2.0 base stations.
+    Steam-free HTC VIVE Tracker / Lighthouse tracking for ROS2 (Galactic) using
+    libsurvive. Publishes PoseStamped + TF (and optionally TwistStamped) for
+    multiple trackers and base stations without SteamVR / OpenVR. Designed for
+    3 trackers (2 via dongle, 1 via direct USB) and 2x SteamVR 2.0 base stations.
   </description>
 
   <maintainer email="fndlrkdl94@gmail.com">robot</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
 
   <!-- pure python node: no compiled ROS targets, libsurvive is an external lib -->
-  <depend>rospy</depend>
-  <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf2_geometry_msgs</depend>
-  <depend>tf</depend>
-  <depend>python3-numpy</depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
 
   <export>
+    <build_type>ament_python</build_type>
   </export>
 </package>
