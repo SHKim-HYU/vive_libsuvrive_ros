@@ -25,7 +25,8 @@ def generate_launch_description():
             package='vive_libsurvive_ros',
             executable='survive_tracking_node',
             name=LaunchConfiguration('node_name'),
-            output=LaunchConfiguration('output'),
+            # Galactic Node(output=...) takes a literal only (substitutions land in Humble).
+            output='screen',
             parameters=[{'config': LaunchConfiguration('config')}],
         ),
     ])
